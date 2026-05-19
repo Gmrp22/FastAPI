@@ -38,6 +38,33 @@ def get_books(genre: str = 'all'):
         raise myCustomError(str(e), 500)
 
 
+@app.get("/books/author")
+async def get_author_books(name: str):
+    try:
+        with open("books.json", "r") as file:
+            books_db = json.load(file)
+    except FileNotFoundError:
+        raise myCustomError("File not found", 500)
+    except Exception as e:
+        raise myCustomError(str(e), 500)
+    return [book for book in books_db if book.get("author") == name]
+
+
+@app.get('/books/author/{book_author}')
+def read_author_category_by_query(book_author: str, category: str = 'all'):
+    try:
+        with open("books.json", "r") as file:
+            books_db = json.load(file)
+    except FileNotFoundError:
+        raise myCustomError("File not found", 500)
+    except Exception as e:
+        raise myCustomError(str(e), 500)
+
+    if category == 'all':
+        return [book for book in books_db if book.get("author") == book_author]
+    return [book for book in books_db if book.get("author") == book_author and book.get("genre") == category]
+
+
 @app.get("/books/{id}")
 def get_book(id: int):
     try:
@@ -55,22 +82,6 @@ def get_book(id: int):
     raise myCustomError("Book not found", 404)
 
 
-@app.get('/books/author/{book_author}')
-def read_author_category_by_query(book_author: str, category: str = 'all'):
-    try:
-        with open("books.json", "r") as file:
-            books_db = json.load(file)
-    except FileNotFoundError:
-        raise myCustomError("File not found", 500)
-    except Exception as e:
-        raise myCustomError(str(e), 500)
-
-    if category == 'all':
-        ##guarda book de book en books caudno
-        return [book for book in books_db if book.get("author") == book_author]
-    return [book for book in books_db if book.get("author") == book_author and book.get("genre") == category]
-
-
 @app.post("/books/create_book")
 async def create_book(new_book=Body()):
     try:
@@ -85,3 +96,42 @@ async def create_book(new_book=Body()):
     with open("books.json", "w") as file:
         json.dump(books_db, file, indent=4)
     return new_book
+
+
+@app.put("/books/{id}")
+def update_book(id: int, updated_book=Body()):
+    try:
+        with open("books.json", "r") as file:
+            books_db = json.load(file)
+    except FileNotFoundError:
+        raise myCustomError("File not found", 500)
+    except Exception as e:
+        raise myCustomError(str(e), 500)
+
+    for book in books_db:
+        if book.get("id") == id:
+            book.update(updated_book)
+            with open("books.json", "w") as file:
+                json.dump(books_db, file, indent=4)
+            return updated_book
+    raise myCustomError("Book not found", 404)
+
+
+@app.delete("/books/{id}")
+def delete_book(id: int):
+    try:
+        with open("books.json", "r") as file:
+            books_db = json.load(file)
+    except FileNotFoundError:
+        raise myCustomError("File not found", 500)
+    except Exception as e:
+        raise myCustomError(str(e), 500)
+
+    for book in books_db:
+        if book.get("id") == id:
+            books_db.remove(book)
+            with open("books.json", "w") as file:
+                json.dump(books_db, file, indent=4)
+            return {"message": "Book deleted successfully"}
+    raise myCustomError("Book not found", 404)
+
